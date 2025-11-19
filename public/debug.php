@@ -49,12 +49,38 @@ try {
     $app = require_once __DIR__.'/../bootstrap/app.php';
     echo "Bootstrap: SUCCESS ✓<br>";
     
-    echo "<br><strong>Laravel loaded successfully! The issue might be in your routes or controllers.</strong>";
+    // Try to boot the app
+    $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+    echo "Kernel: SUCCESS ✓<br>";
+    
+    echo "<br><strong style='color: green;'>✓ Laravel loaded successfully!</strong><br>";
+    echo "<br>The 500 error is likely caused by:<br>";
+    echo "1. Database connection issue - Check your .env database credentials<br>";
+    echo "2. Missing APP_KEY - Run: php artisan key:generate<br>";
+    echo "3. Cache issues - Run: php artisan config:clear && php artisan cache:clear<br>";
+    echo "4. Check storage/logs/laravel.log for the actual error<br>";
+    
 } catch (Exception $e) {
-    echo "ERROR: " . $e->getMessage() . "<br>";
-    echo "File: " . $e->getFile() . "<br>";
+    echo "<strong style='color: red;'>ERROR LOADING LARAVEL:</strong><br>";
+    echo "Message: " . htmlspecialchars($e->getMessage()) . "<br>";
+    echo "File: " . htmlspecialchars($e->getFile()) . "<br>";
     echo "Line: " . $e->getLine() . "<br>";
+    echo "<br><pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
 }
 
-echo "<br><br><strong>DELETE THIS FILE (debug.php) AFTER FIXING!</strong>";
+echo "<br><br><h2>Check Laravel Log</h2>";
+$logFile = __DIR__.'/../storage/logs/laravel.log';
+if (file_exists($logFile)) {
+    echo "Log file exists: YES ✓<br>";
+    echo "Last 20 lines:<br>";
+    echo "<pre style='background: #f5f5f5; padding: 10px; overflow: auto; max-height: 300px;'>";
+    $lines = file($logFile);
+    $lastLines = array_slice($lines, -20);
+    echo htmlspecialchars(implode('', $lastLines));
+    echo "</pre>";
+} else {
+    echo "Log file not found<br>";
+}
+
+echo "<br><br><strong style='color: red;'>⚠️ DELETE THIS FILE (debug.php) AFTER FIXING!</strong>";
 ?>
