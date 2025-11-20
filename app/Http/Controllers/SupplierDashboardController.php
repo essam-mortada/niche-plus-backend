@@ -27,6 +27,9 @@ class SupplierDashboardController extends Controller
         
         $stats = [
             'total_offers' => $offers->count(),
+            'pending_offers' => $offers->where('status', 'pending')->count(),
+            'approved_offers' => $offers->where('status', 'approved')->count(),
+            'rejected_offers' => $offers->where('status', 'rejected')->count(),
             'total_views' => OfferView::whereIn('offer_id', $offers->pluck('id'))->count(),
             'unique_views' => OfferView::whereIn('offer_id', $offers->pluck('id'))
                 ->distinct('ip_address')
@@ -128,10 +131,14 @@ class SupplierDashboardController extends Controller
         }
 
         $validated['supplier_id'] = $user->supplier->id;
+        $validated['status'] = 'pending'; // Requires admin approval
 
         $offer = Offer::create($validated);
 
-        return response()->json($offer, 201);
+        return response()->json([
+            'message' => 'Offer created successfully and is pending admin approval',
+            'offer' => $offer
+        ], 201);
     }
 
     /**

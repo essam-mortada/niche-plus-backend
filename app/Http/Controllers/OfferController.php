@@ -13,6 +13,19 @@ class OfferController extends Controller
     {
         $query = Offer::with('supplier.user');
 
+        $user = auth()->user();
+        $isSupplier = $user->supplier !== null;
+
+        // Determine what offers to show based on user role and request
+        if ($request->has('my_offers') && $isSupplier) {
+            // Supplier viewing their own offers - show all statuses
+            $query->where('supplier_id', $user->supplier->id);
+        } else {
+            // Everyone else (including admins) viewing marketplace - only approved
+            // Admins should use the admin endpoints to see pending/rejected offers
+            $query->where('status', 'approved');
+        }
+
         // Filter by supplier if requested
         if ($request->has('supplier_id')) {
             $query->where('supplier_id', $request->supplier_id);
@@ -23,11 +36,6 @@ class OfferController extends Controller
             $query->where('city', $request->city);
         }
 
-        // Filter by current user's supplier (for supplier dashboard)
-        if ($request->has('my_offers') && auth()->check() && auth()->user()->supplier) {
-            $query->where('supplier_id', auth()->user()->supplier->id);
-        }
-
         $offers = $query->paginate(20);
         return response()->json($offers);
     }
@@ -36,22 +44,36 @@ class OfferController extends Controller
     {
         $offer = Offer::with('supplier.user')->findOrFail($id);
         
-        // Track view
-        try {
-            $view = \App\Models\OfferView::create([
-                'offer_id' => $offer->id,
-                'user_id' => auth()->id(),
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-            ]);
-            \Log::info("👁️ Offer view tracked", [
-                'offer_id' => $offer->id,
-                'user_id' => auth()->id(),
-                'ip' => $request->ip(),
-                'view_id' => $view->id,
-            ]);
-        } catch (\Exception $e) {
-            \Log::error("❌ Failed to track offer view: " . $e->getMessage());
+        $user = auth()->user();
+        $isAdmin = $user->role === 'admin';
+        $isOwner = $user->supplier && $user->supplier->id === $offer->supplier_id;
+
+        // Check if user can view this offer
+        // Admins and owners can view any status, regular users only approved
+        if (!$isAdmin && !$isOwner && $offer->status !== 'approved') {
+            return response()->json([
+                'message' => 'This offer is not available'
+            ], 403);
+        }
+        
+        // Track view only for approved offers or when owner/admin is viewing
+        if ($offer->status === 'approved' || $isOwner || $isAdmin) {
+            try {
+                $view = \App\Models\OfferView::create([
+                    'offer_id' => $offer->id,
+                    'user_id' => auth()->id(),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+                \Log::info("👁️ Offer view tracked", [
+                    'offer_id' => $offer->id,
+                    'user_id' => auth()->id(),
+                    'ip' => $request->ip(),
+                    'view_id' => $view->id,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error("❌ Failed to track offer view: " . $e->getMessage());
+            }
         }
         
         return response()->json($offer);
@@ -78,8 +100,15 @@ class OfferController extends Controller
             return response()->json(['error' => 'Not a supplier'], 403);
         }
 
+        // Set status to pending by default (admin will approve)
+        $validated['status'] = 'pending';
+
         $offer = $supplier->offers()->create($validated);
-        return response()->json($offer, 201);
+        
+        return response()->json([
+            'message' => 'Offer created successfully and is pending admin approval',
+            'offer' => $offer
+        ], 201);
     }
 
     public function update(Request $request, $id)

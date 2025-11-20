@@ -93,6 +93,15 @@ Route::middleware('auth:api')->group(function () {
         // Application management
         Route::get('/admin/applications', [PaymentController::class, 'getAllApplications']);
         
+        // Offer/Ad management
+        Route::get('/admin/offers', [\App\Http\Controllers\Admin\OfferController::class, 'index']);
+        Route::get('/admin/offers/pending', [\App\Http\Controllers\Admin\OfferController::class, 'pending']);
+        Route::get('/admin/offers/approved', [\App\Http\Controllers\Admin\OfferController::class, 'approved']);
+        Route::get('/admin/offers/rejected', [\App\Http\Controllers\Admin\OfferController::class, 'rejected']);
+        Route::get('/admin/offers/statistics', [\App\Http\Controllers\Admin\OfferController::class, 'statistics']);
+        Route::post('/admin/offers/{id}/approve', [\App\Http\Controllers\Admin\OfferController::class, 'approve']);
+        Route::post('/admin/offers/{id}/reject', [\App\Http\Controllers\Admin\OfferController::class, 'reject']);
+        
         Route::post('/posts', [PostController::class, 'store']);
         Route::put('/posts/{id}', [PostController::class, 'update']);
         Route::delete('/posts/{id}', [PostController::class, 'destroy']);
