@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'niche/backend',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => 'df7e6105135d696130add098aa336e4c88982366',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -557,9 +557,9 @@
             'dev_requirement' => false,
         ),
         'niche/backend' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => 'df7e6105135d696130add098aa336e4c88982366',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
